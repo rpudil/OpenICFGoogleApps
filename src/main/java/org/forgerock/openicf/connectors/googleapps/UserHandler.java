@@ -21,7 +21,6 @@
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  */
-
 package org.forgerock.openicf.connectors.googleapps;
 
 import static org.forgerock.openicf.connectors.googleapps.GoogleAppsConnector.ID_ATTR;
@@ -70,6 +69,10 @@ import com.google.api.services.admin.directory.model.UserPhoto;
 import com.google.common.base.CharMatcher;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
+import java.util.List;
+import org.identityconnectors.framework.common.objects.Uid;
+import org.identityconnectors.framework.common.exceptions.UnknownUidException;
+import org.identityconnectors.framework.common.exceptions.RetryableException;
 
 /**
  *
@@ -186,7 +189,9 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
         StringBuilder builder = new StringBuilder();
         boolean first = true;
         for (Filter filter : andFilter.getFilters()) {
-            if (filter == null) continue;
+            if (filter == null) {
+                continue;
+            }
             StringBuilder sb = filter.accept(this, list);
             if (null != sb) {
                 if (!first) {
@@ -325,117 +330,116 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
     // USER https://developers.google.com/admin-sdk/directory/v1/reference/users
     //
     // /////////////
-
     public static ObjectClassInfo getUserClassInfo() {
         // @formatter:off
             /*
-            {
-			  "kind": "admin#directory#user",
-			  "id": string,
-			  "etag": etag,
-			  "primaryEmail": string,
-			  "name": {
-			    "givenName": string,
-			    "familyName": string,
-			    "fullName": string
-			  },
-			  "isAdmin": boolean,
-			  "isDelegatedAdmin": boolean,
-			  "lastLoginTime": datetime,
-			  "creationTime": datetime,
-			  "deletionTime": datetime,
-			  "agreedToTerms": boolean,
-			  "password": string,
-			  "hashFunction": string,
-			  "suspended": boolean,
-			  "suspensionReason": string,
-			  "changePasswordAtNextLogin": boolean,
-			  "ipWhitelisted": boolean,
-			  "ims": [
-			    {
-			      "type": string,
-			      "customType": string,
-			      "protocol": string,
-			      "customProtocol": string,
-			      "im": string,
-			      "primary": boolean
-			    }
-			  ],
-			  "emails": [
-			    {
-			      "address": string,
-			      "type": string,
-			      "customType": string,
-			      "primary": boolean
-			    }
-			  ],
-			  "externalIds": [
-			    {
-			      "value": string,
-			      "type": string,
-			      "customType": string
-			    }
-			  ],
-			  "relations": [
-			    {
-			      "value": string,
-			      "type": string,
-			      "customType": string
-			    }
-			  ],
-			  "addresses": [
-			    {
-			      "type": string,
-			      "customType": string,
-			      "sourceIsStructured": boolean,
-			      "formatted": string,
-			      "poBox": string,
-			      "extendedAddress": string,
-			      "streetAddress": string,
-			      "locality": string,
-			      "region": string,
-			      "postalCode": string,
-			      "country": string,
-			      "primary": boolean,
-			      "countryCode": string
-			    }
-			  ],
-			  "organizations": [
-			    {
-			      "name": string,
-			      "title": string,
-			      "primary": boolean,
-			      "type": string,
-			      "customType": string,
-			      "department": string,
-			      "symbol": string,
-			      "location": string,
-			      "description": string,
-			      "domain": string,
-			      "costCenter": string
-			    }
-			  ],
-			  "phones": [
-			    {
-			      "value": string,
-			      "primary": boolean,
-			      "type": string,
-			      "customType": string
-			    }
-			  ],
-			  "aliases": [
-			    string
-			  ],
-			  "nonEditableAliases": [
-			    string
-			  ],
-			  "customerId": string,
-			  "orgUnitPath": string,
-			  "isMailboxSetup": boolean,
-			  "includeInGlobalAddressList": boolean,
-			  "thumbnailPhotoUrl": string
-			}
-            */
+         {
+         "kind": "admin#directory#user",
+         "id": string,
+         "etag": etag,
+         "primaryEmail": string,
+         "name": {
+         "givenName": string,
+         "familyName": string,
+         "fullName": string
+         },
+         "isAdmin": boolean,
+         "isDelegatedAdmin": boolean,
+         "lastLoginTime": datetime,
+         "creationTime": datetime,
+         "deletionTime": datetime,
+         "agreedToTerms": boolean,
+         "password": string,
+         "hashFunction": string,
+         "suspended": boolean,
+         "suspensionReason": string,
+         "changePasswordAtNextLogin": boolean,
+         "ipWhitelisted": boolean,
+         "ims": [
+         {
+         "type": string,
+         "customType": string,
+         "protocol": string,
+         "customProtocol": string,
+         "im": string,
+         "primary": boolean
+         }
+         ],
+         "emails": [
+         {
+         "address": string,
+         "type": string,
+         "customType": string,
+         "primary": boolean
+         }
+         ],
+         "externalIds": [
+         {
+         "value": string,
+         "type": string,
+         "customType": string
+         }
+         ],
+         "relations": [
+         {
+         "value": string,
+         "type": string,
+         "customType": string
+         }
+         ],
+         "addresses": [
+         {
+         "type": string,
+         "customType": string,
+         "sourceIsStructured": boolean,
+         "formatted": string,
+         "poBox": string,
+         "extendedAddress": string,
+         "streetAddress": string,
+         "locality": string,
+         "region": string,
+         "postalCode": string,
+         "country": string,
+         "primary": boolean,
+         "countryCode": string
+         }
+         ],
+         "organizations": [
+         {
+         "name": string,
+         "title": string,
+         "primary": boolean,
+         "type": string,
+         "customType": string,
+         "department": string,
+         "symbol": string,
+         "location": string,
+         "description": string,
+         "domain": string,
+         "costCenter": string
+         }
+         ],
+         "phones": [
+         {
+         "value": string,
+         "primary": boolean,
+         "type": string,
+         "customType": string
+         }
+         ],
+         "aliases": [
+         string
+         ],
+         "nonEditableAliases": [
+         string
+         ],
+         "customerId": string,
+         "orgUnitPath": string,
+         "isMailboxSetup": boolean,
+         "includeInGlobalAddressList": boolean,
+         "thumbnailPhotoUrl": string
+         }
+         */
         // @formatter:on
         ObjectClassInfoBuilder builder = new ObjectClassInfoBuilder();
 
@@ -464,32 +468,31 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         builder.addAttributeInfo(AttributeInfoBuilder.define(OperationalAttributes.PASSWORD_NAME,
                 GuardedString.class).setRequired(true).setReadable(false).setReturnedByDefault(
-                false).build());
+                        false).build());
 
         builder.addAttributeInfo(AttributeInfoBuilder.build(SUSPENDED_ATTR, Boolean.class));
         builder.addAttributeInfo(AttributeInfoBuilder.define(SUSPENSION_REASON_ATTR).setUpdateable(
                 false).setCreateable(false).build());
-
         builder.addAttributeInfo(AttributeInfoBuilder.build(CHANGE_PASSWORD_AT_NEXT_LOGIN_ATTR,
                 Boolean.class));
         builder.addAttributeInfo(AttributeInfoBuilder.build(IP_WHITELISTED_ATTR, Boolean.class));
 
-        builder.addAttributeInfo(AttributeInfoBuilder.define(IMS_ATTR, Map.class).setMultiValued(
+        builder.addAttributeInfo(AttributeInfoBuilder.define(IMS_ATTR).setMultiValued(
                 true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(EMAILS_ATTR, Map.class)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(EMAILS_ATTR)
                 .setMultiValued(true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(EXTERNAL_IDS_ATTR, Map.class)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(EXTERNAL_IDS_ATTR)
                 .setMultiValued(true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(RELATIONS_ATTR, Map.class)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(RELATIONS_ATTR)
                 .setMultiValued(true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(ADDRESSES_ATTR, Map.class)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ADDRESSES_ATTR)
                 .setMultiValued(true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(ORGANIZATIONS_ATTR, Map.class)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ORGANIZATIONS_ATTR)
                 .setMultiValued(true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(PHONES_ATTR, Map.class)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(PHONES_ATTR)
                 .setMultiValued(true).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(ALIASES_ATTR).setUpdateable(false)
-                .setCreateable(false).setMultiValued(true).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ALIASES_ATTR)
+                .setMultiValued(true).build());
 
         builder.addAttributeInfo(AttributeInfoBuilder.define(NON_EDITABLE_ALIASES_ATTR)
                 .setUpdateable(false).setCreateable(false).setMultiValued(true).build());
@@ -553,13 +556,13 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
         }
 
         // Optional
-        user.setIms(attributes.findList(IMS_ATTR));
-        user.setEmails(attributes.findList(EMAILS_ATTR));
-        user.setExternalIds(attributes.findList(EXTERNAL_IDS_ATTR));
-        user.setRelations(attributes.findList(RELATIONS_ATTR));
-        user.setAddresses(attributes.findList(ADDRESSES_ATTR));
-        user.setOrganizations(attributes.findList(ORGANIZATIONS_ATTR));
-        user.setPhones(attributes.findList(PHONES_ATTR));
+        user.setIms(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(IMS_ATTR)));
+        user.setEmails(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(EMAILS_ATTR)));
+        user.setExternalIds(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(EXTERNAL_IDS_ATTR)));
+        user.setRelations(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(RELATIONS_ATTR)));
+        user.setAddresses(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(ADDRESSES_ATTR)));
+        user.setOrganizations(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(ORGANIZATIONS_ATTR)));
+        user.setPhones(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(PHONES_ATTR)));
 
         user.setSuspended(attributes.findBoolean(SUSPENDED_ATTR));
         user.setChangePasswordAtNextLogin(attributes
@@ -578,7 +581,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
         }
     }
 
-    public static Directory.Users.Patch updateUser(Directory.Users users, String groupKey,
+    public static Directory.Users.Patch updateUser(Directory.Users users, Uid uid,
             AttributesAccessor attributes) {
         User content = null;
 
@@ -635,8 +638,8 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         Attribute changePasswordAtNextLogin = attributes.find(CHANGE_PASSWORD_AT_NEXT_LOGIN_ATTR);
         if (null != changePasswordAtNextLogin) {
-            Boolean booleanValue =
-                    GoogleAppsUtil.getBooleanValueWithDefault(changePasswordAtNextLogin, null);
+            Boolean booleanValue
+                    = GoogleAppsUtil.getBooleanValueWithDefault(changePasswordAtNextLogin, null);
             if (null != booleanValue) {
                 if (null == content) {
                     content = new User();
@@ -662,7 +665,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setIms(ims.getValue());
+            content.setIms(GoogleAppsUtil.getStructAttr(ims));
         }
 
         Attribute emails = attributes.find(EMAILS_ATTR);
@@ -670,7 +673,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setEmails(emails.getValue());
+            content.setEmails(GoogleAppsUtil.getStructAttr(emails));
         }
 
         Attribute externalIds = attributes.find(EXTERNAL_IDS_ATTR);
@@ -678,7 +681,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setExternalIds(externalIds.getValue());
+            content.setExternalIds(GoogleAppsUtil.getStructAttr(externalIds));
         }
 
         Attribute relations = attributes.find(RELATIONS_ATTR);
@@ -686,7 +689,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setRelations(relations.getValue());
+            content.setRelations(GoogleAppsUtil.getStructAttr(relations));
         }
 
         Attribute addresses = attributes.find(ADDRESSES_ATTR);
@@ -694,7 +697,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setAddresses(addresses.getValue());
+            content.setAddresses(GoogleAppsUtil.getStructAttr(addresses));
         }
 
         Attribute organizations = attributes.find(ORGANIZATIONS_ATTR);
@@ -702,7 +705,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setOrganizations(organizations.getValue());
+            content.setOrganizations(GoogleAppsUtil.getStructAttr(organizations));
         }
 
         Attribute phones = attributes.find(PHONES_ATTR);
@@ -710,7 +713,8 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             if (null == content) {
                 content = new User();
             }
-            content.setPhones(phones.getValue());
+            //           content.setPhones(phones.getValue());
+            content.setPhones(GoogleAppsUtil.getStructAttr(phones));
         }
 
         Attribute orgUnitPath = attributes.find(ORG_UNIT_PATH_ATTR);
@@ -726,8 +730,8 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         Attribute includeInGlobalAddressList = attributes.find(INCLUDE_IN_GLOBAL_ADDRESS_LIST_ATTR);
         if (null != includeInGlobalAddressList) {
-            Boolean booleanValue =
-                    GoogleAppsUtil.getBooleanValueWithDefault(includeInGlobalAddressList, null);
+            Boolean booleanValue
+                    = GoogleAppsUtil.getBooleanValueWithDefault(includeInGlobalAddressList, null);
             if (null != booleanValue) {
                 if (null == content) {
                     content = new User();
@@ -740,7 +744,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             return null;
         }
         try {
-            return users.patch(groupKey, content).setFields(ID_ETAG);
+            return users.patch(uid.getUidValue(), content).setFields(ID_ETAG);
             // } catch (HttpResponseException e){
         } catch (IOException e) {
             logger.warn(e, "Failed to initialize Groups#Patch");
@@ -756,16 +760,15 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         // @formatter:off
         /*
-        content.setPhotoData(com.google.api.client.util.Base64
-                .encodeBase64URLSafeString((byte[]) data.get("photoData")));
-        content.setHeight((Integer) data.get("height"));
-        content.setWidth((Integer) data.get("width"));
+         content.setPhotoData(com.google.api.client.util.Base64
+         .encodeBase64URLSafeString((byte[]) data.get("photoData")));
+         content.setHeight((Integer) data.get("height"));
+         content.setWidth((Integer) data.get("width"));
 
-        // Allowed values are JPEG, PNG, GIF, BMP, TIFF,
-        content.setMimeType((String) data.get("mimeType"));
-        */
+         // Allowed values are JPEG, PNG, GIF, BMP, TIFF,
+         content.setMimeType((String) data.get("mimeType"));
+         */
         // @formatter:on
-
         try {
             return service.update(userKey, content).setFields(ID_ATTR);
             // } catch (HttpResponseException e){

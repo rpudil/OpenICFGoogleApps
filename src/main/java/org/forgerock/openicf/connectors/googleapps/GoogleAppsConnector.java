@@ -30,6 +30,7 @@ import com.google.api.client.http.HttpStatusCodes;
 import com.google.api.services.admin.directory.Directory;
 
 import com.google.api.services.admin.directory.model.Alias;
+import com.google.api.services.admin.directory.model.Aliases;
 import com.google.api.services.admin.directory.model.Group;
 import com.google.api.services.admin.directory.model.Groups;
 import com.google.api.services.admin.directory.model.Member;
@@ -1269,7 +1270,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
 
             final Directory.Users.Patch patch
-                    = updateUser(configuration.getDirectory().users(), uid.getUidValue(),
+                    = updateUser(configuration.getDirectory().users(), uid,
                             attributesAccessor);
             if (null != patch) {
                 uidAfterUpdate
@@ -1282,6 +1283,45 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                                     }
                                 });
             }
+            // aliases
+            if (null != attributesAccessor.findStringList(ALIASES_ATTR)) {
+                List<String> aliases = new ArrayList(attributesAccessor.findStringList(ALIASES_ATTR));
+                final Directory.Users.Aliases aliasesService = configuration.getDirectory().users().aliases();
+                aliases.removeAll(listAliases(aliasesService, uid.getUidValue()));
+                for (Object member : aliases) {
+                    if (member instanceof String) {
+
+                        String id
+                                = execute(createUserAlias(aliasesService, uid.getUidValue(),
+                                        (String) member),
+                                        new RequestResultHandler<Directory.Users.Aliases.Insert, Alias, String>() {
+                                    public String handleResult(
+                                            final Directory.Users.Aliases.Insert request,
+                                            final Alias value) {
+                                        if (null != value) {
+                                            return value.getId();
+                                        } else {
+                                            return null;
+                                        }
+                                    }
+                                });
+
+                        if (null == id) {
+                            // TODO make warn about failed update
+                        }
+                    } else if (null != member) {
+                        // Delete user and Error or
+                        RetryableException e
+                                = RetryableException.wrap("Invalid attribute value: "
+                                        + String.valueOf(member), uid);
+                        e.initCause(new InvalidAttributeValueException(
+                                "Attribute 'aliases' must be a String list"));
+                        throw e;
+                    }
+                }
+            }
+          
+            // groups member
             Attribute groups = attributesAccessor.find(PredefinedAttributes.GROUPS_NAME);
             if (null != groups && null != groups.getValue()) {
                 final Directory.Members service = configuration.getDirectory().members();
@@ -1623,32 +1663,33 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                     .getIpWhitelisted()));
         }
         if (null == attributesToGet || attributesToGet.contains(IMS_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(IMS_ATTR, (Collection) user.getIms()));
+            builder.addAttribute(AttributeBuilder.build(IMS_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user.getIms())));
         }
         if (null == attributesToGet || attributesToGet.contains(EMAILS_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(EMAILS_ATTR, (Collection) user.getEmails()));
+            builder.addAttribute(AttributeBuilder.build(EMAILS_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user.getEmails())));
         }
         if (null == attributesToGet || attributesToGet.contains(EXTERNAL_IDS_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(EXTERNAL_IDS_ATTR, (Collection) user
-                    .getExternalIds()));
+            builder.addAttribute(AttributeBuilder.build(EXTERNAL_IDS_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user
+                    .getExternalIds())));
         }
         if (null == attributesToGet || attributesToGet.contains(RELATIONS_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(RELATIONS_ATTR, (Collection) user
-                    .getRelations()));
+            builder.addAttribute(AttributeBuilder.build(RELATIONS_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user
+                    .getRelations())));
         }
         if (null == attributesToGet || attributesToGet.contains(ADDRESSES_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(ADDRESSES_ATTR, (Collection) user
-                    .getAddresses()));
+            builder.addAttribute(AttributeBuilder.build(ADDRESSES_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user
+                    .getAddresses())));
         }
         if (null == attributesToGet || attributesToGet.contains(ORGANIZATIONS_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(ORGANIZATIONS_ATTR, (Collection) user
-                    .getOrganizations()));
+            builder.addAttribute(AttributeBuilder.build(ORGANIZATIONS_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user
+                    .getOrganizations())));
         }
         if (null == attributesToGet || attributesToGet.contains(PHONES_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(PHONES_ATTR, (Collection) user.getPhones()));
+//            builder.addAttribute(AttributeBuilder.build(PHONES_ATTR, (Collection) user.getPhones()));
+            builder.addAttribute(AttributeBuilder.build(PHONES_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user.getPhones())));
         }
         if (null == attributesToGet || attributesToGet.contains(ALIASES_ATTR)) {
-            builder.addAttribute(AttributeBuilder.build(ALIASES_ATTR, user.getAliases()));
+            builder.addAttribute(AttributeBuilder.build(ALIASES_ATTR, (Collection) GoogleAppsUtil.structAttrToString((Collection) user.getAliases())));
         }
 
         if (null == attributesToGet || attributesToGet.contains(NON_EDITABLE_ALIASES_ATTR)) {
@@ -1803,6 +1844,37 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             // } catch (HttpResponseException e){
         } catch (IOException e) {
             logger.warn(e, "Failed to initialize Members#Delete");
+            throw ConnectorException.wrap(e);
+        }
+        return result;
+    }
+
+    protected Set<String> listAliases(Directory.Users.Aliases service, String userKey) {
+        final Set<String> result = CollectionUtil.newCaseInsensitiveSet();
+        try {
+
+            Directory.Users.Aliases.List request = service.list(userKey);
+
+            String nextPageToken = null;
+            do {
+                nextPageToken
+                        = execute(request,
+                                new RequestResultHandler<Directory.Users.Aliases.List, Aliases, String>() {
+                                    public String handleResult(Directory.Users.Aliases.List request,
+                                            Aliases value) {
+                                        if (null != value.getAliases()) {
+                                            for (Alias alias : value.getAliases()) {
+                                                result.add(alias.getAlias());
+                                            }
+                                        }
+                                        return null;
+                                    }
+                                });
+
+            } while (StringUtil.isNotBlank(nextPageToken));
+            // } catch (HttpResponseException e){
+        } catch (IOException e) {
+            logger.warn(e, "Failed to initialize Aliases#List");
             throw ConnectorException.wrap(e);
         }
         return result;
