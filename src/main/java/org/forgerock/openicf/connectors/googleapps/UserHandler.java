@@ -556,13 +556,13 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
         }
 
         // Optional
-        user.setIms(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(IMS_ATTR)));
-        user.setEmails(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(EMAILS_ATTR)));
-        user.setExternalIds(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(EXTERNAL_IDS_ATTR)));
-        user.setRelations(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(RELATIONS_ATTR)));
-        user.setAddresses(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(ADDRESSES_ATTR)));
-        user.setOrganizations(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(ORGANIZATIONS_ATTR)));
-        user.setPhones(GoogleAppsUtil.getStructAttr((Attribute) attributes.findList(PHONES_ATTR)));
+        user.setIms(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(IMS_ATTR)));
+        user.setEmails(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(EMAILS_ATTR)));
+        user.setExternalIds(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(EXTERNAL_IDS_ATTR)));
+        user.setRelations(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(RELATIONS_ATTR)));
+        user.setAddresses(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(ADDRESSES_ATTR)));
+        user.setOrganizations(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(ORGANIZATIONS_ATTR)));
+        user.setPhones(GoogleAppsUtil.getStructAttr((Attribute) attributes.find(PHONES_ATTR)));
 
         user.setSuspended(attributes.findBoolean(SUSPENDED_ATTR));
         user.setChangePasswordAtNextLogin(attributes

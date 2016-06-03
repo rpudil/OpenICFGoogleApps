@@ -139,6 +139,9 @@ public class GoogleAppsUtil {
             ArrayList<Object> attrItems = new ArrayList();
             for (Object item : values.toArray()) {
                 if (item instanceof ArrayMap) {
+                    if (((ArrayMap) item).containsKey("value") && (((ArrayMap) item).get("value").equals("null") || ((ArrayMap) item).get("value").equals(""))) {
+                        continue;
+                    }
                     ArrayList<String> entryItems = new ArrayList();
                     for (Object entryAM : ((ArrayMap) item).entrySet()) {
                         Entry<Object, Object> entry = (Entry<Object, Object>) entryAM;
