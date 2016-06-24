@@ -183,7 +183,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
         if (null == credential) {
             synchronized (this) {
                 if (null == credential) {
-                    System.setProperty("https.protocols", "SSLv3");
+                    System.setProperty("https.protocols", "TLSv1.2");
                     credential =
                             new Credential.Builder(BearerToken.authorizationHeaderAccessMethod())
                             .setTransport(HTTP_TRANSPORT)
